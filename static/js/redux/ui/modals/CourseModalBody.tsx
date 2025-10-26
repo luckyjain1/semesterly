@@ -464,6 +464,10 @@ const CourseModalBody = (props: CourseModalBodyProps) => {
     );
   }
 
+  type CourseWithDrop = DenormalizedCourse & { drop_rate?: number | null };
+  const dropRateRaw = (props.course as CourseWithDrop)?.drop_rate;
+  const dropRatePct = typeof dropRateRaw === "number" ? (dropRateRaw * 100) : null;
+
   const creditsSuffix = numCredits === 1 ? " credit" : " credits";
   const avgRating =
     evalInfo.reduce((sum: number, e: any) => sum + parseFloat(e.score), 0) /
@@ -514,6 +518,14 @@ const CourseModalBody = (props: CourseModalBodyProps) => {
               </div>
             </div>
           </div>
+          {dropRatePct !== null && (
+            <div className="drop-rate-module">
+              <div className="drop-rate__value">
+                {dropRatePct.toFixed(1)}%
+              </div>
+              <h4>Historical Drop Rate</h4>
+            </div>
+          )}
           {!showCapacityAttention && capacityTracker}
           {showCapacityAttention && isMobile && attentioncapacityTracker}
           <CoursePrereq

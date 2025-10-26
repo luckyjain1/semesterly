@@ -15,7 +15,7 @@ import re
 from django.forms import model_to_dict
 from django.db import models
 from rest_framework import serializers
-
+from analytics.dropstats_models import CourseDropStats
 from timetable.models import Course, Section, Evaluation, Semester, Offering
 from . import utils
 
@@ -43,7 +43,7 @@ class CourseSerializer(serializers.ModelSerializer):
     regexed_courses = serializers.SerializerMethodField()
     popularity_percent = serializers.SerializerMethodField()
     is_waitlist_only = serializers.SerializerMethodField()
-
+    drop_rate = serializers.SerializerMethodField()
     sections = serializers.SerializerMethodField()
 
     def get_evals(self, course):
@@ -87,6 +87,29 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_reactions(self, course):
         return course.get_reactions(self.context.get("student"))
+
+    def get_drop_rate(self, course):
+        sem = self.context.get("semester")
+        if not sem:
+            return None
+
+        # if you only want to show drop rate for past semesters,
+        # add the check here and return None when it's current
+
+        stats = CourseDropStats.objects.filter(
+            course=course,
+            semester=sem,
+        ).first()
+
+        if not stats:
+            return None
+
+        if stats.drop_rate is not None:
+            return round(stats.drop_rate, 3)
+
+        b = stats.baseline_total_enrolment or 0
+        f = stats.final_total_enrolment or 0
+        return round(((b - f) / b), 3) if b else None
 
     def get_regexed_courses(self, course):
         """
@@ -170,6 +193,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "pos",
             "writing_intensive",
             "sub_school",
+            "drop_rate",
         )
 
 
