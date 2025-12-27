@@ -12,8 +12,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
   web:
     image: semesterly
+    container_name: semesterly-web
     environment:
       - NODE_ENV=development
       - PYTHONUNBUFFERED=1
@@ -21,6 +23,7 @@ services:
     command: bash -c "python3 manage.py migrate; yarn watch & python3 /code/manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/code
+      - /code/node_modules
     ports:
       - "8000:8000"
       - "3000:3000"
@@ -31,8 +34,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
   localssl:
     image: jhuopensource/semesterly-caddy
+    container_name: semesterly-localssl
     logging:
       driver: "json-file"
       options:
