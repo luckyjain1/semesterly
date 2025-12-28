@@ -520,11 +520,10 @@ const CourseModalBody = (props: CourseModalBodyProps) => {
             </div>
           </div>
           {dropRatePct !== null && (
-            <div className="drop-rate-module">
-              <div className="drop-rate__value">
-                {dropRatePct.toFixed(1)}%
+            <div className="capacity drop-rate-capacity">
+              <div className="capacity__tracker-text">
+                <span>{dropRatePct.toFixed(1)}% Historical Drop Rate</span>
               </div>
-              <h4>Historical Drop Rate</h4>
             </div>
           )}
           {!showCapacityAttention && capacityTracker}

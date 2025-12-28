@@ -405,6 +405,10 @@
     }
   }
 
+  .drop-rate-capacity + .capacity .capacity__tracker-text {
+    margin-top: 6px;
+  }
+
   .textItem {
     line-height: 20px;
   }

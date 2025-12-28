@@ -103,13 +103,22 @@ class CourseSerializer(serializers.ModelSerializer):
 
         if not stats:
             return None
+        
+        # Only show drop rate if we have a FINAL snapshot
+        if not stats.final_captured_at:
+            return None
 
+        # Prefer cached value if present, but clamp at 0
         if stats.drop_rate is not None:
-            return round(stats.drop_rate, 3)
-
+            return round(max(0.0, stats.drop_rate), 3)
+        
         b = stats.baseline_total_enrolment or 0
         f = stats.final_total_enrolment or 0
-        return round(((b - f) / b), 3) if b else None
+        if not b:
+            return None
+
+        computed = (b - f) / b
+        return round(max(0.0, computed), 3)
 
     def get_regexed_courses(self, course):
         """

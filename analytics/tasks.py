@@ -11,7 +11,8 @@ def _sum_enrolment_for(course, semester):
             .aggregate(total=models.Sum("enrolment"))["total"] or 0)
 
 @shared_task
-def capture_course_drop_snapshot(school: str, year: str, term: str, phase: str):
+def capture_course_drop_snapshot(school, year, term, phase, course_ids=None):
+
     """
     Capture a snapshot ('baseline' or 'final') for ALL courses in (school, term, year).
     Idempotent: won't overwrite unless you later add a force flag.
@@ -20,8 +21,12 @@ def capture_course_drop_snapshot(school: str, year: str, term: str, phase: str):
     now = timezone.now()
 
     qs = (Course.objects
-          .filter(school=school, section__semester=sem)
-          .distinct())
+      .filter(school=school, section__semester=sem)
+      .distinct())
+
+    if course_ids:
+        qs = qs.filter(id__in=course_ids)
+
 
     for c in qs:
         stats, _ = CourseDropStats.objects.get_or_create(course=c, semester=sem)
