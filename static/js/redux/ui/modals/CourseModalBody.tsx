@@ -326,29 +326,29 @@ const CourseModalBody = (props: CourseModalBodyProps) => {
     props.course.description === ""
       ? "No description available"
       : props.course.description.split(courseRegex).map((t, i) => {
-          if (matchedCoursesDescription === null) {
-            return t;
-          }
-          if (
-            matchedCoursesDescription.indexOf(t) !== -1 &&
-            Object.keys(props.course.regexed_courses).indexOf(t) !== -1
-          ) {
-            return (
-              <SlotHoverTip
-                key={t}
-                num={i}
-                code={t}
-                name={props.course.regexed_courses[t]}
-                getShareLinkFromModal={getShareLinkFromModal}
-              />
-            );
-          }
+        if (matchedCoursesDescription === null) {
+          return t;
+        }
+        if (
+          matchedCoursesDescription.indexOf(t) !== -1 &&
+          Object.keys(props.course.regexed_courses).indexOf(t) !== -1
+        ) {
           return (
-            <span className="textItem" key={t}>
-              {t}
-            </span>
+            <SlotHoverTip
+              key={t}
+              num={i}
+              code={t}
+              name={props.course.regexed_courses[t]}
+              getShareLinkFromModal={getShareLinkFromModal}
+            />
           );
-        });
+        }
+        return (
+          <span className="textItem" key={t}>
+            {t}
+          </span>
+        );
+      });
 
   const posTags =
     props.course.pos && props.course.pos.length ? (
@@ -432,9 +432,9 @@ const CourseModalBody = (props: CourseModalBodyProps) => {
   if (!userInfo.isLoggedIn || !userInfo.social_courses) {
     const conversionText = !userInfo.isLoggedIn
       ? "Create an account with Facebook and see which of your Facebook friends are taking or " +
-        "have already taken this class!"
+      "have already taken this class!"
       : "Enable the friend feature to find out who which of your Facebook friends are taking or " +
-        "have already taken this class!";
+      "have already taken this class!";
     const conversionLink = !userInfo.isLoggedIn ? (
       <a onClick={launchSignupModal}>
         <i className="fa fa-facebook" aria-hidden="true" />
@@ -465,8 +465,8 @@ const CourseModalBody = (props: CourseModalBodyProps) => {
     );
   }
 
-  type CourseWithDrop = DenormalizedCourse & { drop_rate?: number | null };
-  const dropRateRaw = (props.course as CourseWithDrop)?.drop_rate;
+  type CourseWithDrop = DenormalizedCourse & { drop_rate?: number | null; historical_drop_rate?: number | null };
+  const dropRateRaw = (props.course as CourseWithDrop)?.historical_drop_rate ?? (props.course as CourseWithDrop)?.drop_rate;
   const dropRatePct = typeof dropRateRaw === "number" ? (dropRateRaw * 100) : null;
 
   const creditsSuffix = numCredits === 1 ? " credit" : " credits";

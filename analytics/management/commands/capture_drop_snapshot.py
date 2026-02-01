@@ -1,17 +1,43 @@
+from __future__ import annotations
+
 from django.core.management.base import BaseCommand
-from analytics.dropstats_scheduler import run_drop_snapshot_scheduler
+from analytics.tasks import capture_course_drop_snapshot
 
 
 class Command(BaseCommand):
-    help = "Run drop-rate snapshot scheduler (baseline=+7 days, final=+21 days from start)."
+    help = "Manually capture course drop snapshot (baseline/final) for a semester."
 
     def add_arguments(self, parser):
-        parser.add_argument("--baseline-days", type=int, default=7)
-        parser.add_argument("--final-days", type=int, default=21)
+        parser.add_argument("school", type=str)   # e.g. jhu
+        parser.add_argument("year", type=str)     # e.g. 2022
+        parser.add_argument("term", type=str)     # e.g. Spring
+        parser.add_argument("phase", type=str, choices=["baseline", "final"])
 
-    def handle(self, *args, **options):
-        run_drop_snapshot_scheduler(
-            baseline_offset_days=options["baseline_days"],
-            final_offset_days=options["final_days"],
+        # Optional: allow a subset by course IDs if your capture function supports it
+        parser.add_argument(
+            "--course-ids",
+            nargs="*",
+            type=int,
+            default=None,
+            help="Optional list of course IDs to snapshot (defaults to all courses in semester).",
         )
-        self.stdout.write(self.style.SUCCESS("Drop snapshot scheduler ran."))
+
+    def handle(self, *args, **opts):
+        school = opts["school"]
+        year = opts["year"]
+        term = opts["term"]
+        phase = opts["phase"]
+        course_ids = opts["course_ids"] or None
+
+        # Your function currently takes (school, year, term, phase) OR
+        # (school, year, term, phase, course_ids). Use whichever you implemented.
+        try:
+            if course_ids is None:
+                capture_course_drop_snapshot(school, year, term, phase)
+            else:
+                capture_course_drop_snapshot(school, year, term, phase, course_ids)
+        except TypeError:
+            # fallback if signature is the 4-arg version
+            capture_course_drop_snapshot(school, year, term, phase)
+
+        self.stdout.write(self.style.SUCCESS(f"Captured {phase} snapshot for {school} {term} {year}."))

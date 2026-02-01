@@ -17,8 +17,9 @@ from django.db import models
 from rest_framework import serializers
 from analytics.dropstats_models import CourseDropStats
 from timetable.models import Course, Section, Evaluation, Semester, Offering
-from . import utils
+from analytics.models import CourseDropRateAggregate
 
+from . import utils
 
 class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,6 +45,7 @@ class CourseSerializer(serializers.ModelSerializer):
     popularity_percent = serializers.SerializerMethodField()
     is_waitlist_only = serializers.SerializerMethodField()
     drop_rate = serializers.SerializerMethodField()
+    historical_drop_rate = serializers.SerializerMethodField()
     sections = serializers.SerializerMethodField()
 
     def get_evals(self, course):
@@ -119,6 +121,13 @@ class CourseSerializer(serializers.ModelSerializer):
 
         computed = (b - f) / b
         return round(max(0.0, computed), 3)
+
+    def get_historical_drop_rate(self, course):
+        agg = CourseDropRateAggregate.objects.filter(course=course).first()
+        if not agg or agg.historical_drop_rate is None:
+            return None
+        # cut at 0% (optional; you asked earlier about cut at 0)
+        return max(0.0, round(agg.historical_drop_rate, 3))
 
     def get_regexed_courses(self, course):
         """
@@ -203,6 +212,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "writing_intensive",
             "sub_school",
             "drop_rate",
+            "historical_drop_rate",
         )
 
 

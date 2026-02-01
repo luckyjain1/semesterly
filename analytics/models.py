@@ -142,3 +142,11 @@ class UIErrorLog(ErrorLog):
     """
 
     componentStack = models.TextField()
+
+class CourseDropRateAggregate(models.Model):
+    course = models.OneToOneField("timetable.Course", on_delete=models.CASCADE)
+
+    historical_drop_rate = models.FloatField(null=True, blank=True)
+    semesters_count = models.IntegerField(default=0)
+
+    updated_at = models.DateTimeField(auto_now=True)
