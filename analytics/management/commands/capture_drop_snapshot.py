@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.core.management.base import BaseCommand
 from analytics.tasks import capture_course_drop_snapshot
 from timetable.models import Semester
-from analytics.dropstats_models import CourseDropStats
+from analytics.models import CourseDropStats
 
 class Command(BaseCommand):
     help = "Manually capture course drop snapshot (baseline/final) for a semester."
@@ -84,7 +84,7 @@ class Command(BaseCommand):
                 )
             )
             return
-            
+
         # Your function currently takes (school, year, term, phase) OR
         # (school, year, term, phase, course_ids). Use whichever you implemented.
         try:

@@ -15,7 +15,7 @@ import re
 from django.forms import model_to_dict
 from django.db import models
 from rest_framework import serializers
-from analytics.dropstats_models import CourseDropStats, CourseDropRateAggregate
+from analytics.models import CourseDropStats, CourseDropRateAggregate
 from timetable.models import Course, Section, Evaluation, Semester, Offering
 
 from . import utils

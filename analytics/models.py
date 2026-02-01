@@ -142,3 +142,23 @@ class UIErrorLog(ErrorLog):
     """
 
     componentStack = models.TextField()
+
+class CourseDropStats(models.Model):
+    course   = models.ForeignKey("timetable.Course", on_delete=models.CASCADE)
+    semester = models.ForeignKey("timetable.Semester", on_delete=models.CASCADE)
+
+    baseline_total_enrolment = models.IntegerField(null=True, blank=True)
+    final_total_enrolment    = models.IntegerField(null=True, blank=True)
+
+    baseline_captured_at = models.DateTimeField(null=True, blank=True)
+    final_captured_at    = models.DateTimeField(null=True, blank=True)
+
+    drop_rate = models.FloatField(null=True, blank=True)  # cached convenience
+
+class CourseDropRateAggregate(models.Model):
+    course = models.OneToOneField("timetable.Course", on_delete=models.CASCADE)
+
+    historical_drop_rate = models.FloatField(null=True, blank=True)
+    semesters_count = models.IntegerField(default=0)
+
+    updated_at = models.DateTimeField(auto_now=True)
