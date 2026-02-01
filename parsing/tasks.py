@@ -19,9 +19,6 @@ from django.conf import settings
 from timetable.school_mappers import SCHOOLS_MAP
 from parsing.schools.active import ACTIVE_PARSING_SCHOOLS as ACTIVE_SCHOOLS
 
-from analytics.tasks import capture_course_drop_snapshot
-from timetable.models import Semester
-
 logger = get_task_logger(__name__)
 
 
@@ -116,26 +113,3 @@ def task_parse_school(school, years_and_terms):
         data=filename,
     )
     logger.info("Finished parse for " + school + " " + str(years_and_terms))
-
-def is_baseline_day(sem: Semester) -> bool:
-    # TODO: implement using your semester calendar (start_date field or mapper)
-    return False
-
-def is_final_day(sem: Semester) -> bool:
-    # TODO: implement using your drop-deadline date
-    return False
-
-@periodic_task(run_every=crontab(hour=0, minute=15), name="task_capture_drop_snapshots")
-def task_capture_drop_snapshots():
-    # iterate active schools/semesters just like your parse tasks do
-    for school in set(SCHOOLS_MAP) & set(ACTIVE_SCHOOLS):
-        active = SCHOOLS_MAP[school].active_semesters  # {year: [terms]}
-        for year, terms in active.items():
-            for term in terms:
-                sem = Semester.objects.filter(name=term, year=year).first()
-                if not sem:
-                    continue
-                if is_baseline_day(sem):
-                    capture_course_drop_snapshot.delay(school, year, term, "baseline")
-                if is_final_day(sem):
-                    capture_course_drop_snapshot.delay(school, year, term, "final")
