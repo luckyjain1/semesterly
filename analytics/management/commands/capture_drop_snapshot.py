@@ -2,8 +2,33 @@ from __future__ import annotations
 
 from django.core.management.base import BaseCommand
 from analytics.tasks import capture_course_drop_snapshot
-from timetable.models import Semester
+from timetable.models import Semester, Offering
 from analytics.models import CourseDropStats
+
+from django.db.models import Value
+from django.utils import timezone
+from django.db.models import DateField, Func
+
+class ToDate(Func):
+    function = "to_date"
+    output_field = DateField()
+
+def get_ineligible_course_ids(school: str, sem, phase: str, today):
+    if phase != "baseline":
+        return []
+    cutoff = today
+
+    return list(
+        Offering.objects.filter(
+            section__semester=sem,
+            section__course__school__iexact=school,
+        )
+        .exclude(date_start__isnull=True)
+        .annotate(start_dt=ToDate("date_start", Value("MM-DD-YYYY")))
+        .filter(start_dt__gt=cutoff)
+        .values_list("section__course_id", flat=True)
+        .distinct()
+    )
 
 class Command(BaseCommand):
     help = "Manually capture course drop snapshot (baseline/final) for a semester."
@@ -40,10 +65,10 @@ class Command(BaseCommand):
         year = opts["year"]
         term = opts["term"]
         phase = opts["phase"]
-        course_ids = opts["course_ids"] or None
         clear = opts["clear"]
         dry_run = opts["dry_run"]
 
+        today = timezone.localdate()
         sem = Semester.objects.get(year=year, name=term)
 
         if clear:
@@ -51,9 +76,6 @@ class Command(BaseCommand):
                 semester=sem,
                 course__school__iexact=school,
             )
-            if course_ids is not None:
-                qs = qs.filter(course_id__in=course_ids)
-
             count = qs.count()
 
             if dry_run:
@@ -84,16 +106,7 @@ class Command(BaseCommand):
                 )
             )
             return
-
-        # Your function currently takes (school, year, term, phase) OR
-        # (school, year, term, phase, course_ids). Use whichever you implemented.
-        try:
-            if course_ids is None:
-                capture_course_drop_snapshot(school, year, term, phase)
-            else:
-                capture_course_drop_snapshot(school, year, term, phase, course_ids)
-        except TypeError:
-            # fallback if signature is the 4-arg version
-            capture_course_drop_snapshot(school, year, term, phase)
+        ineligible_ids = get_ineligible_course_ids(school, sem, phase, today)
+        capture_course_drop_snapshot(school, year, term, phase, ineligible_ids)
 
         self.stdout.write(self.style.SUCCESS(f"Captured {phase} snapshot for {school} {term} {year}."))
