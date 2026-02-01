@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from django.core.management.base import BaseCommand
 from analytics.tasks import capture_course_drop_snapshot
-
+from timetable.models import Semester
+from analytics.dropstats_models import CourseDropStats
 
 class Command(BaseCommand):
     help = "Manually capture course drop snapshot (baseline/final) for a semester."
@@ -22,13 +23,68 @@ class Command(BaseCommand):
             help="Optional list of course IDs to snapshot (defaults to all courses in semester).",
         )
 
+        parser.add_argument(
+            "--reset",
+            action="store_true",
+            help="Delete existing snapshot rows for this semester/phase (and course subset if provided) before capturing.",
+        )
+
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="With --reset: show how many snapshot rows would be deleted, without deleting.",
+        )
+
     def handle(self, *args, **opts):
         school = opts["school"]
         year = opts["year"]
         term = opts["term"]
         phase = opts["phase"]
         course_ids = opts["course_ids"] or None
+        reset = opts["reset"]
+        dry_run = opts["dry_run"]
 
+        sem = Semester.objects.get(year=year, name=term)
+
+        if reset:
+            qs = CourseDropStats.objects.filter(
+                semester=sem,
+                course__school__iexact=school,
+            )
+            if course_ids is not None:
+                qs = qs.filter(course_id__in=course_ids)
+
+            count = qs.count()
+
+            if dry_run:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"[DRY RUN] Would reset {count} CourseDropStats rows for {school} {term} {year} ({phase})."
+                    )
+                )
+                return
+            
+            if phase == "baseline":
+                # Clear only baseline fields
+                qs.update(
+                    baseline_total_enrolment=None,
+                    baseline_captured_at=None,
+                )
+            else:
+                # Clear final fields and cached drop_rate
+                qs.update(
+                    final_total_enrolment=None,
+                    final_captured_at=None,
+                    drop_rate=None,
+                )
+
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Reset {count} rows for {school} {term} {year} ({phase})."
+                )
+            )
+            return
+            
         # Your function currently takes (school, year, term, phase) OR
         # (school, year, term, phase, course_ids). Use whichever you implemented.
         try:
