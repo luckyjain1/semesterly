@@ -3,8 +3,7 @@ from celery import shared_task
 from django.db import models
 from django.utils import timezone
 from timetable.models import Course, Section, Semester
-from analytics.dropstats_models import CourseDropStats
-from analytics.models import CourseDropRateAggregate
+from analytics.dropstats_models import CourseDropStats, CourseDropRateAggregate
 
 def _sum_enrolment_for(course, semester):
     return (Section.objects
