@@ -24,7 +24,7 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--reset",
+            "--clear",
             action="store_true",
             help="Delete existing snapshot rows for this semester/phase (and course subset if provided) before capturing.",
         )
@@ -32,7 +32,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--dry-run",
             action="store_true",
-            help="With --reset: show how many snapshot rows would be deleted, without deleting.",
+            help="With --clear: show how many snapshot rows would be deleted, without deleting.",
         )
 
     def handle(self, *args, **opts):
@@ -41,12 +41,12 @@ class Command(BaseCommand):
         term = opts["term"]
         phase = opts["phase"]
         course_ids = opts["course_ids"] or None
-        reset = opts["reset"]
+        clear = opts["clear"]
         dry_run = opts["dry_run"]
 
         sem = Semester.objects.get(year=year, name=term)
 
-        if reset:
+        if clear:
             qs = CourseDropStats.objects.filter(
                 semester=sem,
                 course__school__iexact=school,
@@ -59,7 +59,7 @@ class Command(BaseCommand):
             if dry_run:
                 self.stdout.write(
                     self.style.WARNING(
-                        f"[DRY RUN] Would reset {count} CourseDropStats rows for {school} {term} {year} ({phase})."
+                        f"[DRY RUN] Would clear {count} CourseDropStats rows for {school} {term} {year} ({phase})."
                     )
                 )
                 return
@@ -80,7 +80,7 @@ class Command(BaseCommand):
 
             self.stdout.write(
                 self.style.WARNING(
-                    f"Reset {count} rows for {school} {term} {year} ({phase})."
+                    f"Cleared {count} rows for {school} {term} {year} ({phase})."
                 )
             )
             return
