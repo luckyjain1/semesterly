@@ -12,7 +12,6 @@
 
 from django.db import models
 from django.contrib.auth.models import User
-from student.models import Student
 
 class CourseDropStats(models.Model):
     course   = models.ForeignKey("timetable.Course", on_delete=models.CASCADE)
@@ -26,3 +25,10 @@ class CourseDropStats(models.Model):
 
     drop_rate = models.FloatField(null=True, blank=True)  # cached convenience
 
+class CourseDropRateAggregate(models.Model):
+    course = models.OneToOneField("timetable.Course", on_delete=models.CASCADE)
+
+    historical_drop_rate = models.FloatField(null=True, blank=True)
+    semesters_count = models.IntegerField(default=0)
+
+    updated_at = models.DateTimeField(auto_now=True)
